@@ -1,5 +1,5 @@
 import styled from 'styled-components';
-import NxWelcome from './nx-welcome';
+import { Game } from './game';
 
 const StyledApp = styled.div`
   // Your style here
@@ -8,7 +8,7 @@ const StyledApp = styled.div`
 export function App() {
   return (
     <StyledApp>
-      <NxWelcome title="pair-matching" />
+      <Game />
     </StyledApp>
   );
 }
