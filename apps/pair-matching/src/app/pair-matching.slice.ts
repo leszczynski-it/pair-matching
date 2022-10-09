@@ -29,12 +29,12 @@ export interface PairMatchingState {
 }
 
 export const initialPairMatchingState: PairMatchingState = {
-  width: 3,
+  width: 4,
   height: 4,
   selected: null,
   finished: false,
   locked: false,
-  board: shuffleBoard(12)
+  board: shuffleBoard(16)
 };
 
 export const pairMatchingSlice = createSlice({

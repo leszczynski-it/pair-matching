@@ -2,12 +2,12 @@ import styled from 'styled-components';
 import { cover } from './const';
 
 const StyledCard = styled.div`
-  font-size: 6rem;
-  padding: 3rem;
+  font-size: 4rem;
+  padding: 2rem;
   border: 1px solid silver;
   border-radius: 5px;
   display: inline-block;
-  margin: 2rem auto;
+  margin: 1rem auto;
   cursor: pointer;
 
   &.CORRECT {
