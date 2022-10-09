@@ -7,7 +7,7 @@ export const PAIR_MATCHING_FEATURE_KEY = 'pairMatching';
 function shuffleBoard(size: number) {
   const shuffledItems = _.shuffle(emojiList).slice(0, size / 2);
   const shuffledBoard = _.shuffle([...shuffledItems, ...shuffledItems]);
-  return shuffledBoard.map(item => ({emoji: item, flipped: false}));
+  return shuffledBoard.map(item => ({ emoji: item, flipped: false }));
 }
 
 export interface CardState {
@@ -16,10 +16,11 @@ export interface CardState {
   status?: 'CORRECT' | 'WRONG';
 }
 
-export interface PairMatchingState  {
+export interface PairMatchingState {
   width: number;
   height: number;
 
+  locked: boolean;
   finished: boolean;
 
   selected: number | null;
@@ -32,8 +33,9 @@ export const initialPairMatchingState: PairMatchingState = {
   height: 4,
   selected: null,
   finished: false,
+  locked: false,
   board: shuffleBoard(12)
-}
+};
 
 export const pairMatchingSlice = createSlice({
   name: PAIR_MATCHING_FEATURE_KEY,
@@ -52,12 +54,13 @@ export const pairMatchingSlice = createSlice({
         }
       });
       state.selected = null;
+      state.locked = false;
     },
-    flip: (state, {payload}: PayloadAction<number>) => {
+    flip: (state, { payload }: PayloadAction<number>) => {
       const previousSelection = state.selected;
       const latestSelection = payload;
 
-      if (previousSelection === latestSelection) {
+      if (state.locked || previousSelection === latestSelection) {
         return;
       }
 
@@ -67,6 +70,10 @@ export const pairMatchingSlice = createSlice({
       } else {
         const status = state.board[latestSelection].emoji === state.board[previousSelection].emoji ? 'CORRECT' : 'WRONG';
 
+        if (status === 'WRONG') {
+          state.locked = true;
+        }
+
         state.board[latestSelection].status = status;
         state.board[previousSelection].status = status;
 
@@ -74,7 +81,7 @@ export const pairMatchingSlice = createSlice({
         state.finished = state.board.every(item => item.flipped);
       }
     }
-  },
+  }
 });
 
 export const pairMatchingReducer = pairMatchingSlice.reducer;

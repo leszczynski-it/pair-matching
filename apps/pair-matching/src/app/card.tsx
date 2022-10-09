@@ -7,13 +7,23 @@ const StyledCard = styled.div`
   border: 1px solid silver;
   border-radius: 5px;
   display: inline-block;
-  margin: 3rem auto;
+  margin: 2rem auto;
+  cursor: pointer;
+
+  &.CORRECT {
+    background-color: rgba(0, 128, 0, 20%);
+  }
+
+  &.WRONG {
+    background-color: rgba(255, 0, 0, 20%);
+  }
 `;
 
-export function Card(props: {emoji: string, flipped: boolean}) {
+export function Card(props: { emoji: string, flipped: boolean, status?: 'CORRECT' | 'WRONG', onClick?: () => void }) {
   return (
-    <StyledCard>
-      {!props.flipped ? <span role='img' aria-labelledby='Cover'>{cover}</span> : <span role='img' aria-labelledby='Image'>{props.emoji}</span>}
+    <StyledCard className={props.status} onClick={props.onClick}>
+      {!props.flipped ? <span role='img' aria-labelledby='Cover'>{cover}</span> :
+        <span role='img' aria-labelledby='Image'>{props.emoji}</span>}
     </StyledCard>
   );
 }

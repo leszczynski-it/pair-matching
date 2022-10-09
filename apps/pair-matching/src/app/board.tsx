@@ -1,25 +1,41 @@
 import { Card } from './card';
 import styled from 'styled-components';
-import { emojiList } from './const';
-import { shuffle } from 'lodash'
+import { useAppDispatch, useAppSelector } from './hooks';
+import { flip, hideWrongSelections } from './pair-matching.slice';
+import { useCallback, useEffect } from 'react';
 
 const StyledBoard = styled.div`
-  .wrapper {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 3rem;
-    grid-template-rows: repeat(3, 1fr);
-  }
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1rem;
+  grid-template-rows: repeat(3, 1fr);
 `;
 
 export function Board() {
-  const map = shuffle(emojiList);
+  const { board, locked } = useAppSelector((state) => state.pairMatching);
+  const dispatch = useAppDispatch();
+
+  const flipCard = useCallback((index: number) => {
+    dispatch(flip(index));
+  }, [dispatch]);
+
+  useEffect(() => {
+    if (locked) {
+      setTimeout(() => {
+        dispatch(hideWrongSelections());
+      }, 800);
+    }
+  }, [locked, dispatch]);
 
   return (
     <StyledBoard>
-      <div className={'wrapper'}>
-        {map.map((item, index) => (<Card key={index} emoji={item} flipped={true} />))}
-      </div>
+      {board.map((item, index) => (
+        <Card key={index}
+              onClick={() => flipCard(index)}
+              emoji={item.emoji}
+              flipped={item.flipped}
+              status={item.status} />
+      ))}
     </StyledBoard>
   );
 }

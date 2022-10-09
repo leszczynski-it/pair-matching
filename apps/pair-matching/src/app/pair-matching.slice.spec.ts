@@ -4,22 +4,20 @@ import {
   pairMatchingReducer, PairMatchingState
 } from './pair-matching.slice';
 
-import { store } from './store';
-
 describe('pairMatching reducer', () => {
   const getFirstIndex = (state: PairMatchingState) => {
     return state.board.findIndex(card => !card.flipped);
-  }
+  };
 
-  const findNextPairIndex = (state: PairMatchingState, initialIndex: number) => {
+  const findPair = (state: PairMatchingState, initialIndex: number) => {
     return state.board.findIndex((card, index) => {
       return card.emoji === state.board[initialIndex].emoji && index !== initialIndex;
     });
-  }
+  };
 
-  const findDifferentCard = (state: PairMatchingState, index: number) => {
+  const findDifferent = (state: PairMatchingState, index: number) => {
     return state.board.findIndex(card => card.emoji !== state.board[index].emoji);
-  }
+  };
 
   const getInitialState = () => {
     return pairMatchingReducer(
@@ -29,86 +27,91 @@ describe('pairMatching reducer', () => {
   };
 
   it('should handle initial state', () => {
-    const state = store.getState().pairMatching;
-
+    const state = getInitialState();
     expect(state.board.length).toEqual(12);
+    expect(state.finished).toBeFalsy();
+    expect(state.locked).toBeFalsy();
   });
 
-  it('should handle fetchPairMatchings', () => {
-    const state = pairMatchingReducer(
-      undefined,
-      pairMatchingActions.reset()
-    );
-
-    expect(state.board.length).toEqual(12);
+  describe('reset', () => {
+    it('should flip the card', () => {
+      let state = getInitialState();
+      state = pairMatchingReducer(state, flip(2));
+      expect(state.board[2].flipped).toBeTruthy();
+    });
   });
 
-  it('should handle flip', () => {
-    let state = getInitialState();
+  describe('flip', () => {
+    it('should flip the card', () => {
+      let state = getInitialState();
+      state = pairMatchingReducer(state, flip(2));
+      expect(state.board[2].flipped).toBeTruthy();
+    });
 
-    state = pairMatchingReducer(state, flip(2));
-    expect(state.board[2].flipped).toBeTruthy();
-  });
+    it('should not allow to flip same element again', () => {
+      let state = getInitialState();
+      state = pairMatchingReducer(state, flip(2));
+      state = pairMatchingReducer(state, flip(2));
+      expect(state.board[2].flipped).toBeTruthy();
+    });
 
-  it('should not allow to flip same element again', () => {
-    let state = getInitialState();
-    state = pairMatchingReducer(state, flip(2));
-    state = pairMatchingReducer(state, flip(2));
-    expect(state.board[2].flipped).toBeTruthy();
-  });
+    it('should flip back after incorrect selection', () => {
+      let state = getInitialState();
+      state = pairMatchingReducer(state, flip(0));
 
-  it('should set finished state after revealing all pairs', () => {
-    let state = getInitialState();
-    for (let i = 0; i < state.board.length; i++) {
-      state = pairMatchingReducer(state, flip(i));
-    }
-    expect(state.finished).toBeTruthy();
-  });
+      const incorrectIndex = state.board.findIndex(card => card.emoji !== state.board[0].emoji);
+      state = pairMatchingReducer(state, flip(incorrectIndex));
 
-  it('should flip back after incorrect selection', () => {
-    let state = getInitialState();
-    state = pairMatchingReducer(state, flip(0));
+      expect(state.board.every(card => card.flipped)).toBeFalsy();
+    });
 
-    const incorrectIndex = state.board.findIndex(card => card.emoji !== state.board[0].emoji);
-    state = pairMatchingReducer(state, flip(incorrectIndex));
+    it('should set open state after right selection', () => {
+      let state = getInitialState();
+      const initialIndex = getFirstIndex(state);
+      state = pairMatchingReducer(state, flip(initialIndex));
 
-    expect(state.board.every(card => card.flipped)).toBeFalsy();
-  });
+      const correctIndex = findPair(state, initialIndex);
+      state = pairMatchingReducer(state, flip(correctIndex));
 
-  it('should set open state after right selection', () => {
-    let state = getInitialState();
-    const initialIndex = getFirstIndex(state);
-    state = pairMatchingReducer(state, flip(initialIndex));
+      expect(state.board[initialIndex].flipped).toBeTruthy();
+      expect(state.board[initialIndex].status).toBe('CORRECT');
 
-    const correctIndex = findNextPairIndex(state, initialIndex);
-    state = pairMatchingReducer(state, flip(correctIndex));
+      expect(state.board[correctIndex].flipped).toBeTruthy();
+      expect(state.board[correctIndex].status).toBe('CORRECT');
+    });
 
-    expect(state.board[initialIndex].flipped).toBeTruthy();
-    expect(state.board[initialIndex].status).toBe('CORRECT');
+    it('should set open state and wrong flag after incorrect selection', () => {
+      let state = getInitialState();
+      const initialIndex = getFirstIndex(state);
+      state = pairMatchingReducer(state, flip(initialIndex));
 
-    expect(state.board[correctIndex].flipped).toBeTruthy();
-    expect(state.board[correctIndex].status).toBe('CORRECT');
+      const correctIndex = findDifferent(state, initialIndex);
+      state = pairMatchingReducer(state, flip(correctIndex));
+
+      expect(state.board[initialIndex].flipped).toBeTruthy();
+      expect(state.board[initialIndex].status).toBe('WRONG');
+
+      expect(state.board[correctIndex].flipped).toBeTruthy();
+      expect(state.board[correctIndex].status).toBe('WRONG');
+
+      expect(state.locked).toBeTruthy();
+    });
   });
 
   describe('hide wrong selections', () => {
     it('should reset state of cards', () => {
       let state = getInitialState();
       state = pairMatchingReducer(state, flip(0));
-      const incorrectCardIndex = findDifferentCard(state, 0);
+      const incorrectCardIndex = findDifferent(state, 0);
       state = pairMatchingReducer(state, flip(incorrectCardIndex));
 
-      state = pairMatchingReducer(state, hideWrongSelections());
-      expect(state.board.every(card => !card.flipped)).toBeTruthy();
-    });
-
-    it('should reset state of cards keeping correct one', () => {
-      let state = getInitialState();
-      state = pairMatchingReducer(state, flip(0));
-      const incorrectCardIndex = findDifferentCard(state, 0);
-      state = pairMatchingReducer(state, flip(incorrectCardIndex));
+      expect(state.locked).toBeTruthy();
+      expect(state.board.filter(card => !card.flipped).length).toEqual(10);
 
       state = pairMatchingReducer(state, hideWrongSelections());
-      expect(state.board.every(card => !card.flipped)).toBeTruthy();
+
+      expect(state.locked).toBeFalsy();
+      expect(state.board.filter(card => !card.flipped).length).toEqual(12);
     });
   });
 });
